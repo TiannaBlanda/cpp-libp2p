@@ -17,18 +17,17 @@ namespace libp2p::basic {
     return total_unsent_size_;
   }
 
-  void WriteQueue::enqueue(DataRef data, bool some,
-                           Writer::WriteCallbackFunc cb) {
+  void WriteQueue::enqueue(DataRef data, Writer::WriteCallbackFunc cb) {
     auto data_sz = static_cast<size_t>(data.size());
 
     assert(data_sz > 0);
     assert(canEnqueue(data_sz));
 
     total_unsent_size_ += data_sz;
-    queue_.push_back({data, 0, 0, data_sz, some, std::move(cb)});
+    queue_.push_back({data, 0, 0, data_sz, std::move(cb)});
   }
 
-  size_t WriteQueue::dequeue(size_t window_size, DataRef &out, bool &some) {
+  size_t WriteQueue::dequeue(size_t window_size, DataRef &out) {
     if (total_unsent_size_ == 0 || window_size == 0
         || active_index_ >= queue_.size()) {
       out = DataRef{};
@@ -56,15 +55,8 @@ namespace libp2p::basic {
     item.unsent -= sz;
     item.unacknowledged += sz;
 
-    if (item.some) {
-      assert(item.acknowledged == 0);
-      some = true;
+    if (item.unsent == 0) {
       ++active_index_;
-    } else {
-      some = false;
-      if (item.unsent == 0) {
-        ++active_index_;
-      }
     }
 
     assert(item.unacknowledged + item.acknowledged + item.unsent
@@ -99,16 +91,10 @@ namespace libp2p::basic {
 
     bool completed = false;
 
-    if (item.some) {
-      completed = true;
-      total_size = size;
+    item.unacknowledged -= size;
+    item.acknowledged += size;
 
-    } else {
-      item.unacknowledged -= size;
-      item.acknowledged += size;
-
-      completed = (item.acknowledged == total_size);
-    }
+    completed = (item.acknowledged == total_size);
 
     if (!completed) {
       assert(total_size > item.acknowledged);

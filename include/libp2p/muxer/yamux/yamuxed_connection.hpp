@@ -91,14 +91,13 @@ namespace libp2p::connection {
 
       Buffer packet;
       StreamId stream_id;
-      bool some;
     };
 
     // YamuxStreamFeedback interface overrides
 
     /// Stream transfers data to connection
-    void writeStreamData(uint32_t stream_id, gsl::span<const uint8_t> data,
-                         bool some) override;
+    void writeStreamData(uint32_t stream_id,
+                         gsl::span<const uint8_t> data) override;
 
     /// Stream acknowledges received bytes
     void ackReceivedBytes(uint32_t stream_id, uint32_t bytes) override;
@@ -160,14 +159,13 @@ namespace libp2p::connection {
 
     /// Writes data to underlying connection or (if is_writing_) enqueues them
     /// If stream_id != 0, stream will be acknowledged about data written
-    void enqueue(Buffer packet, StreamId stream_id = 0, bool some = false);
+    void enqueue(Buffer packet, StreamId stream_id = 0);
 
     /// Performs write into connection
     void doWrite(WriteQueueItem packet);
 
     /// Write callback
-    void onDataWritten(outcome::result<size_t> res, StreamId stream_id,
-                       bool some);
+    void onDataWritten(outcome::result<size_t> res, StreamId stream_id);
 
     /// Creates new yamux stream
     std::shared_ptr<Stream> createStream(StreamId stream_id);
