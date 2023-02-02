@@ -42,14 +42,15 @@ namespace libp2p::basic {
            == static_cast<size_t>(item.data.size()));
     assert(item.unsent > 0);
 
-    out = item.data.subspan(item.acknowledged + item.unacknowledged);
+    out = item.data.subspan(
+        gsl::narrow<ptrdiff_t>(item.acknowledged + item.unacknowledged));
     auto sz = static_cast<size_t>(out.size());
 
     assert(sz == item.unsent);
 
     if (sz > window_size) {
       sz = window_size;
-      out = out.subspan(0, window_size);
+      out = out.subspan(0, gsl::narrow<ptrdiff_t>(window_size));
     }
 
     item.unsent -= sz;
