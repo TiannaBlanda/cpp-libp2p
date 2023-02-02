@@ -8,6 +8,9 @@
 #include <algorithm>
 
 #include <arpa/inet.h>
+#include <libp2p/basic/read_full.hpp>
+#include <libp2p/basic/write_full.hpp>
+#include <libp2p/common/ambigous_size.hpp>
 #include <libp2p/common/byteutil.hpp>
 #include <libp2p/crypto/aes_ctr/aes_ctr_impl.hpp>
 #include <libp2p/crypto/error.hpp>
@@ -196,48 +199,8 @@ namespace libp2p::connection {
 
   void SecioConnection::read(gsl::span<uint8_t> out, size_t bytes,
                              basic::Reader::ReadCallbackFunc cb) {
-    // TODO(107): Reentrancy
-
-    if (!isInitialized()) {
-      log_->error("Reading on unintialized connection");
-      cb(Error::CONN_NOT_INITIALIZED);
-      return;
-    }
-
-    // the line below is due to gsl::span.size() has signed return type
-    size_t out_size{out.empty() ? 0u : static_cast<size_t>(out.size())};
-    if (out_size < bytes) {
-      log_->error(
-          "Provided buffer is too short. Buffer size is {} when {} required",
-          out_size, bytes);
-      cb(Error::TOO_SHORT_BUFFER);
-      return;
-    }
-
-    if (user_data_buffer_.size() >= bytes) {
-      popUserData(out, bytes);
-      SL_TRACE(log_, "Successfully read {} bytes", bytes);
-      cb(bytes);
-      return;
-    }
-
-    ReadCallbackFunc cb_wrapper =
-        [self{shared_from_this()}, user_cb{cb}, out,
-         bytes](outcome::result<size_t> size_read_res) -> void {
-      if (not size_read_res) {
-        // in case of error, propagate it to the caller
-        user_cb(size_read_res);
-        return;
-      }
-      /* No error occurred.
-       * Initiate one more read to check if there is enough decrypted bytes to
-       * return to the caller.
-       * If no, let's read one more SECIO frame */
-      self->read(out, bytes, user_cb);
-    };
-
-    // this populates user_data_buffer_ when read successful
-    readNextMessage(cb_wrapper);
+    ambigousSize(out, bytes);
+    readFull(shared_from_this(), out, std::move(cb));
   }
 
   void SecioConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -345,6 +308,12 @@ namespace libp2p::connection {
 
   void SecioConnection::write(gsl::span<const uint8_t> in, size_t bytes,
                               basic::Writer::WriteCallbackFunc cb) {
+    ambigousSize(in, bytes);
+    writeFull(shared_from_this(), in, std::move(cb));
+  }
+
+  void SecioConnection::writeSome(gsl::span<const uint8_t> in, size_t bytes,
+                                  basic::Writer::WriteCallbackFunc cb) {
     // TODO(107): Reentrancy
 
     if (!isInitialized()) {
@@ -377,11 +346,6 @@ namespace libp2p::connection {
           user_cb(bytes);
         };
     original_connection_->write(frame_buffer, frame_buffer.size(), cb_wrapper);
-  }
-
-  void SecioConnection::writeSome(gsl::span<const uint8_t> in, size_t bytes,
-                                  basic::Writer::WriteCallbackFunc cb) {
-    write(in, bytes, std::move(cb));
   }
 
   bool SecioConnection::isClosed() const {

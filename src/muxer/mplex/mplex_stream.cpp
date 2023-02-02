@@ -8,6 +8,9 @@
 #include <algorithm>
 
 #include <boost/container_hash/hash.hpp>
+#include <libp2p/basic/read_full.hpp>
+#include <libp2p/basic/write_full.hpp>
+#include <libp2p/common/ambigous_size.hpp>
 #include <libp2p/muxer/mplex/mplexed_connection.hpp>
 
 #define TRY_GET_CONNECTION(conn_var_name) \
@@ -32,7 +35,8 @@ namespace libp2p::connection {
 
   void MplexStream::read(gsl::span<uint8_t> out, size_t bytes,
                          ReadCallbackFunc cb) {
-    read(out, bytes, std::move(cb), false);
+    ambigousSize(out, bytes);
+    readFull(shared_from_this(), out, std::move(cb));
   }
 
   void MplexStream::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -97,6 +101,12 @@ namespace libp2p::connection {
 
   void MplexStream::write(gsl::span<const uint8_t> in, size_t bytes,
                           WriteCallbackFunc cb) {
+    ambigousSize(in, bytes);
+    writeFull(shared_from_this(), in, std::move(cb));
+  }
+
+  void MplexStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,
+                              WriteCallbackFunc cb) {
     // TODO(107): Reentrancy
 
     if (is_reset_) {
@@ -157,11 +167,6 @@ namespace libp2p::connection {
       return cb(Error::STREAM_RESET_BY_HOST);
     }
     connection_.lock()->deferWriteCallback(ec, std::move(cb));
-  }
-
-  void MplexStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,
-                              WriteCallbackFunc cb) {
-    write(in, bytes, std::move(cb));
   }
 
   bool MplexStream::isClosed() const noexcept {

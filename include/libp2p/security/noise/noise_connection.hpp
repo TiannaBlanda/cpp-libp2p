@@ -75,9 +75,6 @@ namespace libp2p::connection {
     outcome::result<crypto::PublicKey> remotePublicKey() const override;
 
    private:
-    void read(gsl::span<uint8_t> out, size_t bytes, OperationContext ctx,
-              ReadCallbackFunc cb);
-
     void readSome(gsl::span<uint8_t> out, size_t bytes, OperationContext ctx,
                   ReadCallbackFunc cb);
 

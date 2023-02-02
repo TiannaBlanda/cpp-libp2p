@@ -7,6 +7,9 @@
 
 #include <cassert>
 
+#include <libp2p/basic/read_full.hpp>
+#include <libp2p/basic/write_full.hpp>
+#include <libp2p/common/ambigous_size.hpp>
 #include <libp2p/muxer/yamux/yamux_frame.hpp>
 
 #define TRACE_ENABLED 0
@@ -41,7 +44,8 @@ namespace libp2p::connection {
 
   void YamuxStream::read(gsl::span<uint8_t> out, size_t bytes,
                          ReadCallbackFunc cb) {
-    doRead(out, bytes, std::move(cb), false);
+    ambigousSize(out, bytes);
+    readFull(shared_from_this(), out, std::move(cb));
   }
 
   void YamuxStream::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -65,7 +69,8 @@ namespace libp2p::connection {
 
   void YamuxStream::write(gsl::span<const uint8_t> in, size_t bytes,
                           WriteCallbackFunc cb) {
-    doWrite(in, bytes, std::move(cb), false);
+    ambigousSize(in, bytes);
+    writeFull(shared_from_this(), in, std::move(cb));
   }
 
   void YamuxStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,

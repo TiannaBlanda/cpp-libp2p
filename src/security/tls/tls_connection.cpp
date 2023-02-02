@@ -6,6 +6,10 @@
 #include "tls_connection.hpp"
 #include "tls_details.hpp"
 
+#include <libp2p/basic/read_full.hpp>
+#include <libp2p/basic/write_full.hpp>
+#include <libp2p/common/ambigous_size.hpp>
+
 namespace libp2p::connection {
 
   using TlsError = security::TlsError;
@@ -138,10 +142,10 @@ namespace libp2p::connection {
   }
 
   void TlsConnection::read(gsl::span<uint8_t> out, size_t bytes,
-                           Reader::ReadCallbackFunc f) {
+                           Reader::ReadCallbackFunc cb) {
+    ambigousSize(out, bytes);
     SL_TRACE(log(), "reading {} bytes", bytes);
-    boost::asio::async_read(socket_, makeBuffer(out, bytes),
-                            closeOnError(*this, std::move(f)));
+    readFull(shared_from_this(), out, std::move(cb));
   }
 
   void TlsConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -158,9 +162,9 @@ namespace libp2p::connection {
 
   void TlsConnection::write(gsl::span<const uint8_t> in, size_t bytes,
                             Writer::WriteCallbackFunc cb) {
+    ambigousSize(in, bytes);
     SL_TRACE(log(), "writing {} bytes", bytes);
-    boost::asio::async_write(socket_, makeBuffer(in, bytes),
-                             closeOnError(*this, std::move(cb)));
+    writeFull(shared_from_this(), in, std::move(cb));
   }
 
   void TlsConnection::writeSome(gsl::span<const uint8_t> in, size_t bytes,

@@ -5,6 +5,10 @@
 
 #include <libp2p/connection/loopback_stream.hpp>
 
+#include <libp2p/basic/read_full.hpp>
+#include <libp2p/basic/write_full.hpp>
+#include <libp2p/common/ambigous_size.hpp>
+
 namespace libp2p::connection {
 
   namespace {
@@ -74,7 +78,8 @@ namespace libp2p::connection {
 
   void LoopbackStream::read(gsl::span<uint8_t> out, size_t bytes,
                             libp2p::basic::Reader::ReadCallbackFunc cb) {
-    read(out, bytes, std::move(cb), false);
+    ambigousSize(out, bytes);
+    readFull(shared_from_this(), out, std::move(cb));
   }
 
   void LoopbackStream::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -84,6 +89,12 @@ namespace libp2p::connection {
 
   void LoopbackStream::write(gsl::span<const uint8_t> in, size_t bytes,
                              libp2p::basic::Writer::WriteCallbackFunc cb) {
+    ambigousSize(in, bytes);
+    writeFull(shared_from_this(), in, std::move(cb));
+  }
+
+  void LoopbackStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,
+                                 libp2p::basic::Writer::WriteCallbackFunc cb) {
     if (is_reset_) {
       return deferWriteCallback(Error::STREAM_RESET_BY_HOST, std::move(cb));
     }
@@ -111,11 +122,6 @@ namespace libp2p::connection {
     if (auto data_notifyee = std::move(data_notifyee_)) {
       data_notifyee(buffer_.size());
     }
-  }
-
-  void LoopbackStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,
-                                 libp2p::basic::Writer::WriteCallbackFunc cb) {
-    write(in, bytes, std::move(cb));
   }
 
   void LoopbackStream::read(gsl::span<uint8_t> out, size_t bytes,
