@@ -5,7 +5,8 @@
 
 #include <libp2p/layer/websocket/ssl_connection.hpp>
 
-#include <boost/asio/read.hpp>
+#include <libp2p/basic/read.hpp>
+#include <libp2p/basic/write.hpp>
 #include <libp2p/common/ambigous_size.hpp>
 #include <libp2p/common/asio_buffer.hpp>
 #include <libp2p/common/asio_cb.hpp>
@@ -45,7 +46,7 @@ namespace libp2p::connection {
   void SslConnection::read(gsl::span<uint8_t> out, size_t bytes,
                            libp2p::basic::Reader::ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
-    boost::asio::async_read(ssl_, asioBuffer(out), toAsioCbSize(std::move(cb)));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void SslConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -57,7 +58,7 @@ namespace libp2p::connection {
   void SslConnection::write(gsl::span<const uint8_t> in, size_t bytes,
                             libp2p::basic::Writer::WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
-    boost::asio::async_write(ssl_, asioBuffer(in), toAsioCbSize(std::move(cb)));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void SslConnection::writeSome(gsl::span<const uint8_t> in, size_t bytes,
