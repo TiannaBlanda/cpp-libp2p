@@ -8,8 +8,8 @@
 #include <algorithm>
 
 #include <boost/container_hash/hash.hpp>
-#include <libp2p/basic/read_full.hpp>
-#include <libp2p/basic/write_full.hpp>
+#include <libp2p/basic/read.hpp>
+#include <libp2p/basic/write.hpp>
 #include <libp2p/common/ambigous_size.hpp>
 #include <libp2p/muxer/mplex/mplexed_connection.hpp>
 

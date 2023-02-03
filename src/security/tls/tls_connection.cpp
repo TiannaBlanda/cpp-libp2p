@@ -6,8 +6,8 @@
 #include "tls_connection.hpp"
 #include "tls_details.hpp"
 
-#include <libp2p/basic/read_full.hpp>
-#include <libp2p/basic/write_full.hpp>
+#include <libp2p/basic/read.hpp>
+#include <libp2p/basic/write.hpp>
 #include <libp2p/common/ambigous_size.hpp>
 
 namespace libp2p::connection {

@@ -8,8 +8,8 @@
 #include <algorithm>
 
 #include <arpa/inet.h>
-#include <libp2p/basic/read_full.hpp>
-#include <libp2p/basic/write_full.hpp>
+#include <libp2p/basic/read.hpp>
+#include <libp2p/basic/write.hpp>
 #include <libp2p/common/ambigous_size.hpp>
 #include <libp2p/common/byteutil.hpp>
 #include <libp2p/crypto/aes_ctr/aes_ctr_impl.hpp>
