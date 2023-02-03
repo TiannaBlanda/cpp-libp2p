@@ -45,7 +45,7 @@ namespace libp2p::connection {
   void YamuxStream::read(gsl::span<uint8_t> out, size_t bytes,
                          ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
-    readFull(shared_from_this(), out, std::move(cb));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void YamuxStream::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -70,7 +70,7 @@ namespace libp2p::connection {
   void YamuxStream::write(gsl::span<const uint8_t> in, size_t bytes,
                           WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
-    writeFull(shared_from_this(), in, std::move(cb));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void YamuxStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,

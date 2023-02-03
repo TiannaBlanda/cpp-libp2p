@@ -11,44 +11,56 @@
 #include <memory>
 
 namespace libp2p {
-  inline void _readFull(const std::shared_ptr<basic::Reader> &reader,
-                        gsl::span<uint8_t> out,
-                        basic::Reader::ReadCallbackFunc &&cb, size_t total) {
+  /// Read exactly `out.size()` bytes
+  inline void read(const std::shared_ptr<basic::Reader> &reader,
+                   gsl::span<uint8_t> out,
+                   std::function<void(outcome::result<void>)> cb) {
     if (out.empty()) {
-      throw std::logic_error{"libp2p::readFull 0 bytes requested"};
+      return reader->deferReadCallback(
+          outcome::success(), [cb{std::move(cb)}](outcome::result<size_t>) {
+            cb(outcome::success());
+          });
     }
-    std::weak_ptr<basic::Reader> _reader = reader;
     // read some bytes
     reader->readSome(
         out, out.size(),
-        [=, cb{std::move(cb)}](outcome::result<size_t> _n) mutable {
-          auto reader = _reader.lock();
+        [=, weak{std::weak_ptr{reader}},
+         cb{std::move(cb)}](outcome::result<size_t> n_res) mutable {
+          auto reader = weak.lock();
           if (not reader) {
             return;
           }
-          if (not _n) {
-            return cb(_n.error());
+          if (not n_res) {
+            return cb(n_res.error());
           }
-          auto n = _n.value();
+          auto n = n_res.value();
+          // `boost::asio::ip::tcp::socket` returns error on close
           if (n == 0) {
-            throw std::logic_error{"libp2p::readFull 0 bytes read"};
+            throw std::logic_error{"libp2p::read 0 bytes read"};
           }
           if (n > spanSize(out)) {
-            throw std::logic_error{"libp2p::readFull too much bytes read"};
+            throw std::logic_error{"libp2p::read too much bytes read"};
           }
           if (n == spanSize(out)) {
             // successfully read last bytes
-            return cb(total);
+            return cb(outcome::success());
           }
           // read remaining bytes
-          _readFull(reader, out.subspan(n), std::move(cb), total);
+          read(reader, out.subspan(n), std::move(cb));
         });
   }
 
-  inline void readFull(const std::shared_ptr<basic::Reader> &reader,
-                       gsl::span<uint8_t> out,
-                       basic::Reader::ReadCallbackFunc cb) {
-    _readFull(reader, out, std::move(cb), out.size());
+  /// `read` with `Reader::read` compatible callback
+  inline void readDeprecated(const std::shared_ptr<basic::Reader> &reader,
+                             gsl::span<uint8_t> out,
+                             basic::Reader::ReadCallbackFunc cb) {
+    read(reader, out, [=, cb{std::move(cb)}](outcome::result<void> res) {
+      if (res) {
+        cb(out.size());
+      } else {
+        cb(res.error());
+      }
+    });
   }
 }  // namespace libp2p
 

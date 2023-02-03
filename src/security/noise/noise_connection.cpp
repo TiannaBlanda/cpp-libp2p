@@ -65,7 +65,7 @@ namespace libp2p::connection {
   void NoiseConnection::read(gsl::span<uint8_t> out, size_t bytes,
                              libp2p::basic::Reader::ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
-    readFull(shared_from_this(), out, std::move(cb));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void NoiseConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -98,7 +98,7 @@ namespace libp2p::connection {
   void NoiseConnection::write(gsl::span<const uint8_t> in, size_t bytes,
                               libp2p::basic::Writer::WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
-    writeFull(shared_from_this(), in, std::move(cb));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void NoiseConnection::write(gsl::span<const uint8_t> in, size_t bytes,

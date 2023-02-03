@@ -130,7 +130,7 @@ namespace libp2p::connection {
                           libp2p::basic::Reader::ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
     SL_TRACE(log_, "read {} bytes", bytes);
-    readFull(shared_from_this(), out, std::move(cb));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void WsConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -145,7 +145,7 @@ namespace libp2p::connection {
                            libp2p::basic::Writer::WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
     SL_TRACE(log_, "write {} bytes", bytes);
-    writeFull(shared_from_this(), in, std::move(cb));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void WsConnection::writeSome(gsl::span<const uint8_t> in,  //

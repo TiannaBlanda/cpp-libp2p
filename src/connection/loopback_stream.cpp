@@ -79,7 +79,7 @@ namespace libp2p::connection {
   void LoopbackStream::read(gsl::span<uint8_t> out, size_t bytes,
                             libp2p::basic::Reader::ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
-    readFull(shared_from_this(), out, std::move(cb));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void LoopbackStream::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -90,7 +90,7 @@ namespace libp2p::connection {
   void LoopbackStream::write(gsl::span<const uint8_t> in, size_t bytes,
                              libp2p::basic::Writer::WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
-    writeFull(shared_from_this(), in, std::move(cb));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void LoopbackStream::writeSome(gsl::span<const uint8_t> in, size_t bytes,

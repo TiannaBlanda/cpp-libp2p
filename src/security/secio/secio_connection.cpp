@@ -200,7 +200,7 @@ namespace libp2p::connection {
   void SecioConnection::read(gsl::span<uint8_t> out, size_t bytes,
                              basic::Reader::ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
-    readFull(shared_from_this(), out, std::move(cb));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void SecioConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -309,7 +309,7 @@ namespace libp2p::connection {
   void SecioConnection::write(gsl::span<const uint8_t> in, size_t bytes,
                               basic::Writer::WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
-    writeFull(shared_from_this(), in, std::move(cb));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void SecioConnection::writeSome(gsl::span<const uint8_t> in, size_t bytes,

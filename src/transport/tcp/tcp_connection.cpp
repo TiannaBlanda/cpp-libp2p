@@ -223,7 +223,7 @@ namespace libp2p::transport {
                            TcpConnection::ReadCallbackFunc cb) {
     ambigousSize(out, bytes);
     TRACE("{} read {}", debug_str_, bytes);
-    readFull(shared_from_this(), out, std::move(cb));
+    libp2p::readDeprecated(shared_from_this(), out, std::move(cb));
   }
 
   void TcpConnection::readSome(gsl::span<uint8_t> out, size_t bytes,
@@ -237,7 +237,7 @@ namespace libp2p::transport {
                             TcpConnection::WriteCallbackFunc cb) {
     ambigousSize(in, bytes);
     TRACE("{} write {}", debug_str_, bytes);
-    writeFull(shared_from_this(), in, std::move(cb));
+    libp2p::writeDeprecated(shared_from_this(), in, std::move(cb));
   }
 
   void TcpConnection::writeSome(gsl::span<const uint8_t> in, size_t bytes,

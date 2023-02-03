@@ -11,44 +11,55 @@
 #include <memory>
 
 namespace libp2p {
-  inline void _writeFull(const std::shared_ptr<basic::Writer> &writer,
-                         gsl::span<const uint8_t> in,
-                         basic::Writer::WriteCallbackFunc &&cb, size_t total) {
+  /// Read exactly `in.size()` bytes
+  inline void write(const std::shared_ptr<basic::Writer> &writer,
+                    gsl::span<const uint8_t> in,
+                    std::function<void(outcome::result<void>)> cb) {
     if (in.empty()) {
-      throw std::logic_error{"libp2p::writeFull 0 bytes requested"};
+      return writer->deferWriteCallback(
+          {}, [cb{std::move(cb)}](outcome::result<size_t>) {
+            cb(outcome::success());
+          });
     }
-    std::weak_ptr<basic::Writer> _writer = writer;
     // read some bytes
     writer->writeSome(
         in, in.size(),
-        [=, cb{std::move(cb)}](outcome::result<size_t> _n) mutable {
-          auto writer = _writer.lock();
+        [=, weak{std::weak_ptr{writer}},
+         cb{std::move(cb)}](outcome::result<size_t> n_res) mutable {
+          auto writer = weak.lock();
           if (not writer) {
             return;
           }
-          if (not _n) {
-            return cb(_n.error());
+          if (not n_res) {
+            return cb(n_res.error());
           }
-          auto n = _n.value();
+          auto n = n_res.value();
           if (n == 0) {
-            throw std::logic_error{"libp2p::writeFull 0 bytes written"};
+            throw std::logic_error{"libp2p::write 0 bytes written"};
           }
           if (n > spanSize(in)) {
-            throw std::logic_error{"libp2p::writeFull too much bytes written"};
+            throw std::logic_error{"libp2p::write too much bytes written"};
           }
           if (n == spanSize(in)) {
             // successfully read last bytes
-            return cb(total);
+            return cb(outcome::success());
           }
           // read remaining bytes
-          _writeFull(writer, in.subspan(n), std::move(cb), total);
+          write(writer, in.subspan(n), std::move(cb));
         });
   }
 
-  inline void writeFull(const std::shared_ptr<basic::Writer> &writer,
-                        gsl::span<const uint8_t> in,
-                        basic::Writer::WriteCallbackFunc cb) {
-    _writeFull(writer, in, std::move(cb), in.size());
+  /// `write` with `Writer::write` compatible callback
+  inline void writeDeprecated(const std::shared_ptr<basic::Writer> &writer,
+                              gsl::span<const uint8_t> in,
+                              basic::Writer::WriteCallbackFunc cb) {
+    write(writer, in, [=, cb{std::move(cb)}](outcome::result<void> res) {
+      if (res) {
+        cb(in.size());
+      } else {
+        cb(res.error());
+      }
+    });
   }
 }  // namespace libp2p
 
