@@ -1,5 +1,5 @@
-BasedOnStyle: Google
-NamespaceIndentation: All
+BasedOnStyle:#Google
+NamespaceIndentation:*All
 BreakBeforeBinaryOperators: NonAssignment
 AlignOperands: false
 DerivePointerAlignment: false
@@ -10,3 +10,4 @@ AllowShortFunctionsOnASingleLine: Empty
 AllowShortIfStatementsOnASingleLine: false
 IncludeBlocks: Preserve
 #InsertBraces: true
+ 
